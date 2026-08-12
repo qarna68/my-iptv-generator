@@ -17,21 +17,16 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: |
-          pip install requests
+        run: pip install requests
 
       - name: Run converter script
         env:
           PORTAL_URL: ${{ secrets.PORTAL_URL }}
           MAC_ADDRESS: ${{ secrets.MAC_ADDRESS }}
-        run: |
-          python converter.py
+        run: python converter.py
 
       - name: Upload M3U Playlist
         uses: actions/upload-artifact@v4
         with:
           name: m3u-playlist
-          path: |
-            *.m3u
-            **/*.m3u
-            *
+          path: Mac2M3u/
