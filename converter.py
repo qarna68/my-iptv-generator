@@ -8,6 +8,8 @@ if not portal_url or not mac_address:
     print("Error: Portal URL or MAC Address is missing in secrets.")
     exit(1)
 
+print(f"Current working directory: {os.getcwd()}")
+
 api_url = f"{portal_url}/server/api.php?action=get_all_channels&type=itv"
 headers = {"Cookie": f"mac={mac_address}"}
 
@@ -18,7 +20,6 @@ try:
         data = response.json()
         channels = data.get('js', [])
         
-        # حفظ الملف مباشرة باسم channels.m3u
         file_path = "channels.m3u"
         with open(file_path, "w", encoding="utf-8") as f:
             f.write("#EXTM3U\n")
@@ -27,7 +28,9 @@ try:
                 cmd = ch.get('cmd', '')
                 f.write(f"#EXTINF:-1,{name}\n")
                 f.write(f"{portal_url}/live/{mac_address}/{mac_address}/{cmd}\n")
-        print(f"Done! Saved to {file_path}")
+                
+        abs_path = os.path.abspath(file_path)
+        print(f"Successfully generated channels.m3u at: {abs_path}")
     else:
         print(f"Failed, status code: {response.status_code}")
 except Exception as e:
