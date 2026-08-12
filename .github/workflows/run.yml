@@ -31,4 +31,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: m3u-playlist
-          path: '*.m3u'
+          path: |
+            *.m3u
+            **/*.m3u
+            *
