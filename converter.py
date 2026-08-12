@@ -8,10 +8,6 @@ if not portal_url or not mac_address:
     print("Error: Portal URL or MAC Address is missing in secrets.")
     exit(1)
 
-# إنشاء مجلد Mac2M3u تلقائياً
-output_dir = "Mac2M3u"
-os.makedirs(output_dir, exist_ok=True)
-
 api_url = f"{portal_url}/server/api.php?action=get_all_channels&type=itv"
 headers = {"Cookie": f"mac={mac_address}"}
 
@@ -22,8 +18,8 @@ try:
         data = response.json()
         channels = data.get('js', [])
         
-        # حفظ الملف داخل المجلد الجديد
-        file_path = os.path.join(output_dir, "channels.m3u")
+        # حفظ الملف مباشرة باسم channels.m3u
+        file_path = "channels.m3u"
         with open(file_path, "w", encoding="utf-8") as f:
             f.write("#EXTM3U\n")
             for ch in channels:
