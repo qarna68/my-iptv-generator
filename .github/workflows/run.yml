@@ -1,1 +1,35 @@
+name: Run IPTV Converter
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run converter script
+        env:
+          PORTAL_URL: ${{ secrets.PORTAL_URL }}
+          MAC_ADDRESS: ${{ secrets.MAC_ADDRESS }}
+        run: |
+          python converter.py
+
+      - name: Upload M3U Playlist
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3u-playlist
+          path: *.m3u
 
