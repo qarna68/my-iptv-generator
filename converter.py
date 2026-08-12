@@ -8,11 +8,12 @@ if not portal_url or not mac_address:
     print("Error: Portal URL or MAC Address is missing in secrets.")
     exit(1)
 
-# رابط جلب القنوات المباشرة من البورتال
+# إنشاء مجلد Mac2M3u تلقائياً
+output_dir = "Mac2M3u"
+os.makedirs(output_dir, exist_ok=True)
+
 api_url = f"{portal_url}/server/api.php?action=get_all_channels&type=itv"
-headers = {
-    "Cookie": f"mac={mac_address}"
-}
+headers = {"Cookie": f"mac={mac_address}"}
 
 print(f"Connecting to portal...")
 try:
@@ -21,17 +22,17 @@ try:
         data = response.json()
         channels = data.get('js', [])
         
-        # إنشاء ملف m3u جديد
-        with open("channels.m3u", "w", encoding="utf-8") as f:
+        # حفظ الملف داخل المجلد الجديد
+        file_path = os.path.join(output_dir, "channels.m3u")
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write("#EXTM3U\n")
             for ch in channels:
                 name = ch.get('name', 'Unknown')
                 cmd = ch.get('cmd', '')
                 f.write(f"#EXTINF:-1,{name}\n")
                 f.write(f"{portal_url}/live/{mac_address}/{mac_address}/{cmd}\n")
-                
-        print(f"Successfully generated channels.m3u with {len(channels)} channels!")
+        print(f"Done! Saved to {file_path}")
     else:
-        print(f"Failed to connect, status code: {response.status_code}")
+        print(f"Failed, status code: {response.status_code}")
 except Exception as e:
-    print(f"An error occurred: {e}")
+    print(f"Error: {e}")
