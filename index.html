@@ -1,37 +1,185 @@
-import os
-import requests
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مولد ملفات IPTV M3U</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #38bdf8;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            background-color: #0f172a;
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #38bdf8;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0369a1;
+        }
+        button:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+        .success { background-color: #065f46; color: #a7f3d0; }
+        .error { background-color: #991b1b; color: #fecaca; }
+        .info { background-color: #1e3a8a; color: #bfdbfe; }
+    </style>
+</head>
+<body>
 
-portal_url = os.environ.get('PORTAL_URL')
-mac_address = os.environ.get('MAC_ADDRESS')
-
-if not portal_url or not mac_address:
-    print("Error: Portal URL or MAC Address is missing in secrets.")
-    exit(1)
-
-api_url = f"{portal_url}/server/api.php?action=get_all_channels&type=itv"
-headers = {"Cookie": f"mac={mac_address}"}
-
-print(f"Connecting to portal: {portal_url}")
-try:
-    response = requests.get(api_url, headers=headers, timeout=30)
-    print(f"Response Status Code: {response.status_code}")
-    
-    if response.status_code == 200:
-        data = response.json()
-        print(f"Response Data Sample: {str(data)[:200]}")
-        channels = data.get('js', [])
-        print(f"Total channels found: {len(channels)}")
+    <div class="container">
+        <h2>مولد قنوات Stalker M3U</h2>
         
-        file_path = "channels.m3u"
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write("#EXTM3U\n")
-            for ch in channels:
-                name = ch.get('name', 'Unknown')
-                cmd = ch.get('cmd', '')
-                f.write(f"#EXTINF:-1,{name}\n")
-                f.write(f"{portal_url}/live/{mac_address}/{mac_address}/{cmd}\n")
-        print(f"Successfully generated {file_path}")
-    else:
-        print(f"Failed to connect, status code: {response.status_code}")
-except Exception as e:
-    print(f"An error occurred: {e}")
+        <div class="form-group">
+            <label for="portalUrl">رابط البوابة (Portal URL):</label>
+            <input type="text" id="portalUrl" placeholder="http://example.com:8080">
+        </div>
+
+        <div class="form-group">
+            <label for="macAddress">عنوان الماك (MAC Address):</label>
+            <input type="text" id="macAddress" placeholder="00:1A:79:XX:XX:XX" value="00:1A:79:">
+        </div>
+
+        <button id="generateBtn" onclick="generateM3U()">توليد وتحميل ملف M3U</button>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        async function generateM3U() {
+            let portalUrl = document.getElementById('portalUrl').value.trim();
+            const macAddress = document.getElementById('macAddress').value.trim();
+            const statusDiv = document.getElementById('status');
+            const btn = document.getElementById('generateBtn');
+
+            if (!portalUrl || !macAddress) {
+                showStatus("الرجاء إدخال رابط البوابة وعنوان الماك!", "error");
+                return;
+            }
+
+            // إزالة الشرطة المائلة الأخيرة من الرابط إن وجدت
+            portalUrl = portalUrl.replace(/\/+$/, '');
+
+            btn.disabled = true;
+            showStatus("جاري الاتصال وجلب القنوات... (قد يستغرق بضع ثوانٍ)", "info");
+
+            const apiUrl = `${portalUrl}/server/api.php?action=get_all_channels&type=itv`;
+
+            // ملاحظة: المتصفحات قد تمنع الطلبات المباشرة (CORS) مع بعض السيرفرات. 
+            // إذا واجهتك مشكلة CORS، قد تضطر لاستخدام بروكسي بسيط أو تشغيله عبر سيرفر محلي.
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        "Cookie": `mac=${macAddress}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`فشل الاتصال، كود الخطأ: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const channels = data.js || [];
+
+                if (channels.length === 0) {
+                    showStatus("تم الاتصال ولكن لم يتم العثور على قنوات. تأكد من صحة البيانات أو أن الماك غير مسدود.", "error");
+                    btn.disabled = false;
+                    return;
+                }
+
+                // بناء محتوى ملف M3U
+                let m3uContent = "#EXTM3U\n";
+                channels.forEach(ch => {
+                    const name = ch.name || 'Unknown';
+                    const cmd = ch.cmd || '';
+                    m3uContent += `#EXTINF:-1,${name}\n`;
+                    m3uContent += `${portalUrl}/live/${macAddress}/${macAddress}/${cmd}\n`;
+                });
+
+                // تحميل الملف تلقائياً
+                const blob = new Blob([m3uContent], { type: 'text/plain;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'channels.m3u';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showStatus(`تم بنجاح! تم العثور على ${channels.length} قناة وتنزيل الملف.`, "success");
+            } catch (error) {
+                console.error(error);
+                showStatus("حدث خطأ أثناء الجلب. (تنبيه: قد تمنع قيود المتصفح CORS الاتصال المباشر ببعض السيرفرات)", "error");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.className = type;
+            statusDiv.textContent = message;
+        }
+    </script>
+</body>
+</html>
